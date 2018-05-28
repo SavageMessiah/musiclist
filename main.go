@@ -34,9 +34,6 @@ var t = template.Must(template.New("main").Parse(`
       {{if .Title}}
       <div class="title">{{.Title}}</div>
       {{end}}
-      <audio controls>
-        <source src="{{.File}}" type="audio/mpeg"/>
-      </audio>
       <p>{{.Desc}}</p>
     </div>
     </li>

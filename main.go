@@ -16,6 +16,7 @@ var t = template.Must(template.New("main").Parse(`
 <html>
 <head>
   <title>HAHA I MADE MUSICS</title>
+  <link href='style.css' rel='stylesheet' type='text/css'/>
 </head>
 <body>
 {{range .}}

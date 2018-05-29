@@ -12,38 +12,6 @@ import (
 	"time"
 )
 
-var t = template.Must(template.New("main").Parse(`
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>HAHA I MADE MUSICS</title>
-  <link href='style.css' rel='stylesheet' type='text/css'/>
-</head>
-<body>
-{{range .}}
-<h1>{{.Title}}</h1>
-<p>{{.Desc}}</p>
-<ul>
-  {{range .Tracks}}
-    <li>
-    <div class="track">
-      <div class="head">
-        <a class="file" href="{{.File}}">{{.File}}</a>&nbsp;
-        <span class="made">({{.Made}})</span>
-      </div>
-      {{if .Title}}
-      <div class="title">{{.Title}}</div>
-      {{end}}
-      <p>{{.Desc}}</p>
-    </div>
-    </li>
-  {{end}}
-</ul>
-{{end}}
-</body>
-</html>
-`))
-
 var dir = flag.String("dir", ".", "The directory to read.")
 
 type Track struct {
@@ -159,7 +127,12 @@ func main() {
 	}
 	defer out.Close()
 
-	if err := t.Execute(out, sectionsList); err != nil {
+	t := template.New("main")
+	if _, err := t.ParseFiles(filepath.Join(*dir, "index.html.tmpl")); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := t.Lookup("index.html.tmpl").Execute(out, sectionsList); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"time"
@@ -109,10 +110,10 @@ func main() {
 			track := Track{
 				Title:   tt.Title,
 				Desc:    tt.Desc,
-				Link:    filepath.Join(section.Dir, base),
+				Link:    path.Join(section.Dir, base),
 				File:    base,
-				Made:    ft.BirthTime().Format("Jan 2, 2006"),
-				madeRaw: ft.BirthTime(),
+				Made:    ft.ModTime().Format("Jan 2, 2006"),
+				madeRaw: ft.ModTime(),
 			}
 			log.Printf("Adding %s to %s", track.Title, section.Title)
 			section.Tracks = append(section.Tracks, track)

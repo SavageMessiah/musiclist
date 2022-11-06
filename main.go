@@ -1,13 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
-	"html/template"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
-	"sort"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -17,25 +15,17 @@ import (
 var dir = flag.String("dir", ".", "The directory to read.")
 
 type Track struct {
-	File    string
-	Link    string
-	Title   string
-	Desc    string
-	Made    string
-	madeRaw time.Time
+	MP3   string
+	Title string
+	Desc  string
+	Made  string
+	Tags  []string
 }
-
-type Tracks []Track
-
-func (t Tracks) Len() int           { return len(t) }
-func (t Tracks) Less(i, j int) bool { return t[i].madeRaw.After(t[j].madeRaw) }
-func (t Tracks) Swap(i, j int)      { t[i], t[j] = t[j], t[i] }
 
 type Section struct {
 	Dir    string
 	Title  string
 	Desc   string
-	Tracks Tracks
 }
 
 type TOMLTrack struct {
@@ -64,6 +54,7 @@ func main() {
 	count := 0
 	var size int64 = 0
 
+	tracks := []Track{}
 	sections := []*Section{}
 	for _, s := range ts.Section {
 		if s.Title == "" {
@@ -73,7 +64,6 @@ func main() {
 			Dir:    s.Dir,
 			Title:  s.Title,
 			Desc:   s.Desc,
-			Tracks: []Track{},
 		}
 		sections = append(sections, section)
 
@@ -107,36 +97,42 @@ func main() {
 			}
 			size += stat.Size()
 
+			var tags []string
+			if s.Dir == "drone" {
+				tags = []string{"noise", "dark"}
+			} else {
+				tags = []string{s.Dir}
+			}
+
 			track := Track{
-				Title:   tt.Title,
-				Desc:    tt.Desc,
-				Link:    path.Join(section.Dir, base),
-				File:    base,
-				Made:    ft.ModTime().Format("Jan 2, 2006"),
-				madeRaw: ft.ModTime(),
+				MP3:   base,
+				Title: tt.Title,
+				Desc:  tt.Desc,
+				Made:  ft.ModTime().Format(time.RFC3339),
+				Tags:  tags,
+			}
+			if tt.Title == "" {
+				track.Title = clean
 			}
 			log.Printf("Adding %s to %s", track.Title, section.Title)
-			section.Tracks = append(section.Tracks, track)
+			tracks = append(tracks, track)
 			count += 1
 		}
-
-		sort.Stable(section.Tracks)
 	}
 
-	out, err := os.Create(filepath.Join(*dir, "index.html"))
+	out, err := os.Create("tracks.json")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("error opening output file: %s", err)
 	}
 	defer out.Close()
 
-	t := template.New("main")
-	if _, err := t.ParseFiles(filepath.Join(*dir, "index.html.tmpl")); err != nil {
-		log.Fatal(err)
+	enc := json.NewEncoder(out)
+	enc.SetIndent("", "  ")
+	err = enc.Encode(tracks)
+	if err != nil {
+		log.Fatalf("error writing output file: %s", err)
 	}
 
-	if err := t.Lookup("index.html.tmpl").Execute(out, sections); err != nil {
-		log.Fatal(err)
-	}
 
 	log.Printf("%d tracks totaling %d MB", count, size/1024/1024)
 }
